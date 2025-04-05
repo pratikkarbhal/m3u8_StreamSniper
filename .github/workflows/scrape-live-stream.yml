@@ -6,7 +6,7 @@ on:
       url:
         description: "The URL to scrape for m3u8 links"
         required: true
-        default: "https://news.abplive.com/live-tv"
+        default: "https://h.thapcam55.run"
 
 jobs:
   scrape:
