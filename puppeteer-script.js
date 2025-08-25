@@ -11,6 +11,7 @@ const fs = require('fs');
 
   console.log("\x1b[34mStarting Puppeteer...\x1b[0m"); // Blue text for startup info
 
+  // ✅ Only fix: add required flags so Chromium can run in CI
   const browser = await puppeteer.launch({
     headless: true,
     args: [
@@ -42,15 +43,15 @@ const fs = require('fs');
     console.log("\x1b[34mNavigating to page:\x1b[0m", targetUrl);
     await page.goto(targetUrl, { waitUntil: 'networkidle2' });
 
-    // Delay to allow network requests
-    await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10s
+    // Wait for network requests to complete
+    await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
   } catch (error) {
     console.error("\x1b[31mError navigating to page:\x1b[0m", error);  // Red text for errors
   }
 
   console.log("\x1b[34mAll network responses:\x1b[0m", m3u8Urls);
 
-  // Save results to file
+  // Save results to file for reference
   if (m3u8Urls.length) {
     console.log(`\x1b[32m✅ Total .m3u8 URLs found: ${m3u8Urls.length}\x1b[0m`);
     fs.writeFileSync('puppeteer_output.txt', m3u8Urls.join('\n'));
