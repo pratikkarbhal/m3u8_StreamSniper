@@ -106,15 +106,6 @@ def main():
         # Final output
         if found:
             print(f"\x1b[32m✅ Total .m3u8 URLs found: {len(found)}\x1b[0m")
-            for url in found:
-                print("  →", url)
-
-            # Save to file
-            with open("m3u8_links.txt", "w") as f:
-                for url in found:
-                    f.write(url + "\n")
-            print("\x1b[34m💾 Saved to m3u8_links.txt\x1b[0m")
-
         else:
             print("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m")
 
