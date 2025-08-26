@@ -35,16 +35,10 @@ jobs:
           # show chrome version
           google-chrome --version || true
 
-      - name: Run Selenium script
+      - name: Run Selenium script (🐞CLICK HERE TO VIEW RESULTS)
         env:
           TARGET_URL: ${{ github.event.inputs.url }}
         run: |
           echo -e "Running Selenium Script."
           python fetch_stream.py | tee puppeteer_output.txt
 
-      - name: Display captured .m3u8 URLs
-        run: |
-          echo -e "\033[1;33m============================\033[0m"
-          echo -e "\033[1;35m Scrape Results: \033[0m"
-          echo -e "\033[1;33m============================\033[0m"
-         
