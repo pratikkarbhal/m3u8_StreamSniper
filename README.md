@@ -15,8 +15,8 @@ You can then play these extracted URLs with your preferred HLS Player (e.g., VLC
 
 ## 📸 Screenshots  
 
-![Workflow Run Example](assets/workflow_run.png)  
-![Extracted Output Example](assets/output_example.png)  
+![Workflow Run Example](navigate.png)  
+![Extracted Output Example](output.png)  
 
 ---
 
