@@ -1,51 +1,42 @@
-import os
 import time
-import sys
-from seleniumwire import webdriver
-from selenium.webdriver.chrome.options import Options
+from seleniumwire import webdriver  # selenium-wire lets us capture network traffic
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
+TARGET_URL = "https://news.abplive.com/live-tv"
 
 def main():
-    target_url = os.getenv("TARGET_URL")
-
-    if not target_url:
-        print("\033[31mNo URL provided. Exiting script.\033[0m")
-        sys.exit(1)
-
-    print("\033[34mStarting Selenium...\033[0m")
-
-    options = Options()
+    print("🌀 Starting Selenium...")
+    
+    # Launch Chrome with selenium-wire to capture requests
+    options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    
+    try:
+        print(f"🌍 Navigating to: {TARGET_URL}")
+        driver.get(TARGET_URL)
 
-    driver = webdriver.Chrome(options=options)
+        # Give some time for requests to load
+        time.sleep(10)
 
-    print("\033[34mNavigating to page:\033[0m", target_url)
-    driver.get(target_url)
-
-    m3u8_urls = []
-    timeout = time.time() + 30  # wait up to 30s
-    while time.time() < timeout:
+        m3u8_url = None
         for request in driver.requests:
             if request.response and ".m3u8" in request.url:
-                if request.url not in m3u8_urls:
-                    m3u8_urls.append(request.url)
-                    print("\033[32mFound .m3u8 URL:\033[0m", request.url)
-        if m3u8_urls:
-            break
-        time.sleep(1)
+                m3u8_url = request.url
+                break
 
-    if m3u8_urls:
-        print(f"\033[32m✅ Total .m3u8 URLs found: {len(m3u8_urls)}\033[0m")
-        with open("puppeteer_output.txt", "w") as f:
-            f.write("\n".join(m3u8_urls))
-    else:
-        print("\033[33m⚠️ No .m3u8 URL found.\033[0m")
-        with open("puppeteer_output.txt", "w") as f:
-            f.write("No .m3u8 URL found.")
+        if m3u8_url:
+            print(f"✅ Found stream URL: {m3u8_url}")
+        else:
+            print("⚠️ No .m3u8 URL found.")
 
-    driver.quit()
+    finally:
+        driver.quit()
 
 if __name__ == "__main__":
     main()
