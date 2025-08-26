@@ -32,39 +32,31 @@ def main():
     print("\x1b[34mNavigating to page:\x1b[0m", target_url)
 
     options = Options()
-    # headless new is recommended for modern Chrome + Selenium
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # enable performance logs
     options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
 
-    # Use webdriver-manager to fetch the matching chromedriver automatically
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     try:
-        # Enable Network domain (so we can call getResponseBody later)
         try:
             driver.execute_cdp_cmd("Network.enable", {})
         except Exception:
             pass
 
         driver.get(target_url)
+        time.sleep(1)  # let resources start loading
 
-        # small wait to let initial resources load
-        time.sleep(1)
-
-        found = []
+        found = set()
         processed = set()
         start = time.time()
         MAX_WAIT = 30  # seconds
 
         while time.time() - start < MAX_WAIT:
-            # Read performance logs (CDP events)
             logs = driver.get_log("performance")
             for entry in logs:
-                # avoid reprocessing the same log
                 key = entry.get("message")
                 if not key or key in processed:
                     continue
@@ -78,58 +70,54 @@ def main():
                 method = msg.get("method", "")
                 params = msg.get("params", {}) or {}
 
-                # 1) Network.requestWillBeSent -> request URL
+                # --- Requests ---
                 if method == "Network.requestWillBeSent":
-                    req = params.get("request", {}) or {}
-                    url = req.get("url", "")
-                    if ".m3u8" in url.lower():
-                        if url not in found:
-                            found.append(url)
-                            print("\x1b[32mFound .m3u8 URL:\x1b[0m", url)
+                    url = params.get("request", {}).get("url", "")
+                    if ".m3u8" in url.lower() and url not in found:
+                        found.add(url)
+                        print("\x1b[32mFound .m3u8 URL:\x1b[0m", url)
 
-                # 2) Network.responseReceived -> response metadata (and optionally fetch body)
+                # --- Responses ---
                 if method == "Network.responseReceived":
                     resp = params.get("response", {}) or {}
                     url = resp.get("url", "") or ""
                     mime = (resp.get("mimeType") or "").lower()
 
-                    # direct response URL contain .m3u8
-                    if ".m3u8" in url.lower():
-                        if url not in found:
-                            found.append(url)
-                            print("\x1b[32mFound .m3u8 URL:\x1b[0m", url)
+                    if ".m3u8" in url.lower() and url not in found:
+                        found.add(url)
+                        print("\x1b[32mFound .m3u8 URL:\x1b[0m", url)
 
-                    # For textual responses (json/js/html) try to read body and search for m3u8 links
-                    try_body = False
                     if ("json" in mime) or ("text" in mime) or ("javascript" in mime) or url.lower().endswith(('.json', '.js', '.html', '.txt')):
-                        try_body = True
-
-                    if try_body:
                         request_id = params.get("requestId")
                         if request_id:
                             try:
                                 body_info = driver.execute_cdp_cmd("Network.getResponseBody", {"requestId": request_id})
                                 body_text = body_info.get("body", "") if isinstance(body_info, dict) else ""
                                 if body_text and ".m3u8" in body_text:
-                                    matches = extract_m3u8_from_text(body_text)
-                                    for m in matches:
+                                    for m in extract_m3u8_from_text(body_text):
                                         if m not in found:
-                                            found.append(m)
+                                            found.add(m)
                                             print("\x1b[32mFound .m3u8 URL:\x1b[0m", m)
                             except Exception:
-                                # sometimes getResponseBody fails (resource not available) - ignore
                                 pass
 
-            if found:
-                break
             time.sleep(0.5)
 
         # Final output
         if found:
             print(f"\x1b[32m✅ Total .m3u8 URLs found: {len(found)}\x1b[0m")
+            for url in found:
+                print("  →", url)
+
+            # Save to file
+            with open("m3u8_links.txt", "w") as f:
+                for url in found:
+                    f.write(url + "\n")
+            print("\x1b[34m💾 Saved to m3u8_links.txt\x1b[0m")
+
         else:
             print("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m")
-            
+
     finally:
         try:
             driver.quit()
