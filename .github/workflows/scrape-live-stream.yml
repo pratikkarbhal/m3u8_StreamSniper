@@ -1,4 +1,4 @@
-name: CLICK HERE TO RUN WORKFLOW
+name: Scrape Live Stream URL (mitmproxy)
 
 on:
   workflow_dispatch:
@@ -11,9 +11,8 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -21,24 +20,40 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Playwright (with system deps)
+      - name: Install Python/pip and mitmproxy
         run: |
-          npm init -y >/dev/null 2>&1 || true
-          npm install playwright
-          npx playwright install --with-deps chromium
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pip
+          python3 -m pip install --upgrade pip
+          python3 -m pip install mitmproxy
 
-      - name: Run Playwright script with dynamic URL
+      - name: Install Puppeteer
+        run: |
+          npm ci || true
+          npm install puppeteer --no-audit --no-fund
+
+      - name: Start mitmproxy (background)
+        run: |
+          # remove previous file if any
+          rm -f captured_m3u8.txt mitm.log || true
+          nohup mitmdump -s capture_m3u8.py -p 8080 > mitm.log 2>&1 &
+          # give mitmproxy a moment to start
+          sleep 2
+          # print a short tail of mitm log for debug
+          tail -n +1 mitm.log || true
+
+      - name: Run Puppeteer script (with proxy)
         env:
           TARGET_URL: ${{ github.event.inputs.url }}
         run: |
-          echo -e "\033[1;36m🌀 Running Playwright Script... 🌀\033[0m"
-          node scrape-script.js | tee playwright_output.txt
+          echo -e "\033[1;36m🌀 Running Puppeteer Script (mitmproxy) ... 🌀\033[0m"
+          node puppeteer-with-mitm.js | tee puppeteer_output.txt
 
-      - name: Display captured .m3u8 URLs
+      - name: Show mitm log and captured URLs
         run: |
-          echo -e "\033[1;33m============================\033[0m"
-          echo -e "\033[1;35m Scrape Results: \033[0m"
-          echo -e "\033[1;33m============================\033[0m"
-          cat playwright_output.txt
-          echo -e "\033[1;33m============================\033[0m"
-          grep 'Found .m3u8 URL:' playwright_output.txt || echo -e "\033[1;31mExit...\033[0m"
+          echo -e "\n===== mitm.log (last 200 lines) ====="
+          tail -n 200 mitm.log || true
+          echo -e "\n===== captured_m3u8.txt ====="
+          if [ -f captured_m3u8.txt ]; then cat captured_m3u8.txt; else echo "(no file)"; fi
+          echo -e "\n===== puppeteer_output.txt ====="
+          cat puppeteer_output.txt || true
