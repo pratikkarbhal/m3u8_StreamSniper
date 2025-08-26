@@ -1,4 +1,4 @@
-name: Scrape Live Stream URL
+name: CLICK HERE TO RUN WORKFLOW
 
 on:
   workflow_dispatch:
@@ -13,31 +13,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Install Playwright
-      run: |
-        npm install playwright
-        npx playwright install --with-deps chromium
+      - name: Install Playwright (with system deps)
+        run: |
+          npm init -y >/dev/null 2>&1 || true
+          npm install playwright
+          npx playwright install --with-deps chromium
 
-    - name: Run Playwright script with dynamic URL
-      env:
-        TARGET_URL: ${{ github.event.inputs.url }}
-      run: |
-        echo -e "\033[1;36m🌀 Running Playwright Script... 🌀\033[0m"
-        node scrape-script.js | tee playwright_output.txt
+      - name: Run Playwright script with dynamic URL
+        env:
+          TARGET_URL: ${{ github.event.inputs.url }}
+        run: |
+          echo -e "\033[1;36m🌀 Running Playwright Script... 🌀\033[0m"
+          node scrape-script.js | tee playwright_output.txt
 
-    - name: Display captured .m3u8 URLs
-      run: |
-        echo -e "\033[1;33m============================\033[0m"
-        echo -e "\033[1;35m Scrape Results: \033[0m"
-        echo -e "\033[1;33m============================\033[0m"
-        cat playwright_output.txt
-        echo -e "\033[1;33m============================\033[0m"
-        grep 'Found .m3u8 URL:' playwright_output.txt || echo -e "\033[1;31mExit...\033[0m"
+      - name: Display captured .m3u8 URLs
+        run: |
+          echo -e "\033[1;33m============================\033[0m"
+          echo -e "\033[1;35m Scrape Results: \033[0m"
+          echo -e "\033[1;33m============================\033[0m"
+          cat playwright_output.txt
+          echo -e "\033[1;33m============================\033[0m"
+          grep 'Found .m3u8 URL:' playwright_output.txt || echo -e "\033[1;31mExit...\033[0m"
