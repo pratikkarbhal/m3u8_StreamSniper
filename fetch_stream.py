@@ -129,11 +129,7 @@ def main():
             print(f"\x1b[32m✅ Total .m3u8 URLs found: {len(found)}\x1b[0m")
         else:
             print("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m")
-
-        try:
             driver.quit()
-        except Exception:
-            pass
 
 if __name__ == "__main__":
     main()
