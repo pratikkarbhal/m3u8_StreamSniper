@@ -9,7 +9,7 @@ You can then play these extracted URLs with your preferred HLS Player (e.g., VLC
 
 ## 🚀 Run Scrape Workflow Manually  
 
-You can trigger the **Scrape Live Stream URL** workflow manually from the **Actions** page in your GitHub repository.  
+You can trigger the **Scrape Live Stream URL** workflow manually from the **Actions** page in your GitHub repository. (After forking the repo) 
 
 ---
 
