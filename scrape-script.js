@@ -1,48 +1,42 @@
-const { chromium } = require('playwright');
-const fs = require('fs');
+const { chromium } = require("playwright");
 
 (async () => {
-  const targetUrl = process.env.TARGET_URL;
-
-  if (!targetUrl) {
-    console.error("\x1b[31mNo URL provided. Exiting script.\x1b[0m");
-    process.exit(1);
-  }
-
-  console.log("\x1b[34mStarting Playwright...\x1b[0m");
-
-  // Launch Chromium (Playwright manages installation)
+  console.log("Starting Playwright...");
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
-  const m3u8Urls = [];
+  const url = process.argv[2] || "https://news.abplive.com/live-tv";
+  console.log("Navigating to page:", url);
 
-  // Capture all network responses
-  page.on('response', async (response) => {
-    const url = response.url();
-    if (url.endsWith('.m3u8')) {
-      m3u8Urls.push(url);
-      console.log("\x1b[32mFound .m3u8 URL:\x1b[0m", url);
+  let m3u8Found = null;
+
+  // ✅ Catch responses in real-time instead of after navigation
+  page.on("response", async (response) => {
+    try {
+      const reqUrl = response.url();
+      if (reqUrl.includes(".m3u8")) {
+        console.log("\x1b[32m✅ Found m3u8 URL:\x1b[0m", reqUrl);
+        m3u8Found = reqUrl;
+
+        // Save immediately and exit quickly
+        const fs = require("fs");
+        fs.writeFileSync("output.m3u8", reqUrl);
+        await browser.close();
+        process.exit(0);
+      }
+    } catch (err) {
+      // Ignore small errors
     }
   });
 
-  try {
-    console.log("\x1b[34mNavigating to page:\x1b[0m", targetUrl);
-    await page.goto(targetUrl, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(10000); // wait for requests
-  } catch (error) {
-    console.error("\x1b[31mError navigating to page:\x1b[0m", error);
-  }
+  await page.goto(url, { waitUntil: "domcontentloaded" });
 
-  console.log("\x1b[34mAll network responses:\x1b[0m", m3u8Urls);
+  // ⏱ Don’t wait forever — give 30 sec max like old script
+  await page.waitForTimeout(30000);
 
-  if (m3u8Urls.length) {
-    console.log("\x1b[32m✅ Total .m3u8 URLs found: ${m3u8Urls.length}\x1b[0m");
-    fs.writeFileSync("playwright_output.txt", m3u8Urls.join('\n'));
-  } else {
+  if (!m3u8Found) {
     console.log("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m");
-    fs.writeFileSync("playwright_output.txt", "No .m3u8 URL found.");
+    await browser.close();
+    process.exit(1);
   }
-
-  await browser.close();
 })();
