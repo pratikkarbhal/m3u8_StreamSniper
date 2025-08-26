@@ -52,7 +52,7 @@ def main():
         found = set()
         processed = set()
         start = time.time()
-        MAX_WAIT = 30  # seconds
+        MAX_WAIT = 10  # seconds
 
         while time.time() - start < MAX_WAIT:
             logs = driver.get_log("performance")
