@@ -35,7 +35,7 @@ jobs:
           # show chrome version
           google-chrome --version || true
 
-      - name: Run Selenium script (🐞CLICK HERE TO VIEW RESULTS)
+      - name: Run Selenium script (🟢CLICK HERE TO VIEW RESULTS)
         env:
           TARGET_URL: ${{ github.event.inputs.url }}
         run: |
