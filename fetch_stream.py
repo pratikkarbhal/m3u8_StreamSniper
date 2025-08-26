@@ -130,17 +130,6 @@ def main():
         else:
             print("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m")
 
-        # Write results to file (keeps compatibility with existing workflow)
-        try:
-            with open("puppeteer_output.txt", "w") as f:
-                if found:
-                    f.write("\n".join(found) + "\n")
-                else:
-                    f.write("No .m3u8 URL found.\n")
-        except Exception:
-            pass
-
-    finally:
         try:
             driver.quit()
         except Exception:
