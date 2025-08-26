@@ -39,7 +39,7 @@ jobs:
         env:
           TARGET_URL: ${{ github.event.inputs.url }}
         run: |
-          echo -e "\033[1;36m🌀 Running Selenium Script... 🌀\033[0m"
+          echo -e "Running Selenium Script."
           python fetch_stream.py | tee puppeteer_output.txt
 
       - name: Display captured .m3u8 URLs
@@ -47,6 +47,4 @@ jobs:
           echo -e "\033[1;33m============================\033[0m"
           echo -e "\033[1;35m Scrape Results: \033[0m"
           echo -e "\033[1;33m============================\033[0m"
-          cat puppeteer_output.txt || true
-          echo -e "\033[1;33m============================\033[0m"
-          grep 'Found .m3u8 URL:' puppeteer_output.txt || echo -e "\033[1;31mNo 'Found' lines in console output.\033[0m"
+         
