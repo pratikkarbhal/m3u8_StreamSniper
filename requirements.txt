@@ -1,3 +1,4 @@
 selenium
 selenium-wire
 blinker
+webdriver-manager
