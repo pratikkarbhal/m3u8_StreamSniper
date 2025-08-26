@@ -37,11 +37,11 @@ const fs = require('fs');
   console.log("\x1b[34mAll network responses:\x1b[0m", m3u8Urls);
 
   if (m3u8Urls.length) {
-    console.log(`\x1b[32m✅ Total .m3u8 URLs found: ${m3u8Urls.length}\x1b[0m`);
-    fs.writeFileSync('playwright_output.txt', m3u8Urls.join('\n'));
+    console.log("\x1b[32m✅ Total .m3u8 URLs found: ${m3u8Urls.length}\x1b[0m");
+    fs.writeFileSync("playwright_output.txt", m3u8Urls.join('\n'));
   } else {
-    console.log("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m`);
-    fs.writeFileSync('playwright_output.txt', 'No .m3u8 URL found.');
+    console.log("\x1b[33m⚠️ No .m3u8 URL found.\x1b[0m");
+    fs.writeFileSync("playwright_output.txt", "No .m3u8 URL found.");
   }
 
   await browser.close();
