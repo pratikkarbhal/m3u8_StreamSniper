@@ -19,23 +19,25 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '18'
 
-    - name: Install Puppeteer
-      run: npm install puppeteer
+    - name: Install Playwright
+      run: |
+        npm install playwright
+        npx playwright install --with-deps chromium
 
-    - name: Run Puppeteer script with dynamic URL
+    - name: Run Playwright script with dynamic URL
       env:
         TARGET_URL: ${{ github.event.inputs.url }}
       run: |
-        echo -e "\033[1;36m🌀 Running Puppeteer Script... 🌀\033[0m"
-        node puppeteer-script.js | tee puppeteer_output.txt
+        echo -e "\033[1;36m🌀 Running Playwright Script... 🌀\033[0m"
+        node scrape-script.js | tee playwright_output.txt
 
     - name: Display captured .m3u8 URLs
       run: |
         echo -e "\033[1;33m============================\033[0m"
         echo -e "\033[1;35m Scrape Results: \033[0m"
         echo -e "\033[1;33m============================\033[0m"
-        cat puppeteer_output.txt
+        cat playwright_output.txt
         echo -e "\033[1;33m============================\033[0m"
-        grep 'Found .m3u8 URL:' puppeteer_output.txt || echo -e "\033[1;31mExit...\033[0m"
+        grep 'Found .m3u8 URL:' playwright_output.txt || echo -e "\033[1;31mExit...\033[0m"
