@@ -7,6 +7,10 @@ on:
         description: "The URL to scrape for m3u8 links (override default)"
         required: true
         default: "https://news.abplive.com/live-tv"
+      max_wait:
+        description: "Max seconds the script should wait for m3u8 (optional)"
+        required: false
+        default: "15"
 
 jobs:
   fetch:
@@ -16,29 +20,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install system dependencies (Chromium + chromedriver)
+        run: |
+          sudo apt-get update -y
+          # Install chromium and chromedriver so a compatible driver is available from PATH
+          sudo apt-get install -y chromium-browser chromium-chromedriver wget gnupg2 ca-certificates unzip
+          # show versions for debugging
+          echo "=== chrome/chromium versions ==="
+          google-chrome --version || true
+          chromium-browser --version || true
+          chromedriver --version || true
+          # export chromedriver path to GITHUB_ENV so script can pick it up
+          echo "CHROMEDRIVER_PATH=$(which chromedriver)" >> $GITHUB_ENV
+          echo "BROWSER_PATH=$(which chromium-browser || true)" >> $GITHUB_ENV
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Install Google Chrome (stable)
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y wget gnupg2 ca-certificates unzip
-          wget -q -O /tmp/google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y /tmp/google-chrome-stable_current_amd64.deb || sudo dpkg -i /tmp/google-chrome-stable_current_amd64.deb || true
-          # show chrome version
-          google-chrome --version || true
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "requirements.txt not found — installing minimal deps"
+            pip install selenium webdriver-manager
+          fi
 
       - name: Run Selenium script (🟢CLICK HERE TO VIEW RESULTS)
         env:
           TARGET_URL: ${{ github.event.inputs.url }}
+          MAX_WAIT_SECONDS: ${{ github.event.inputs.max_wait }}
+          # CHROMEDRIVER_PATH set earlier; your script reads this to skip downloads
+          CHROMEDRIVER_PATH: ${{ env.CHROMEDRIVER_PATH }}
         run: |
-          echo -e "Running Selenium Script."
-          python fetch_stream.py | tee puppeteer_output.txt
+          echo -e "Running Selenium Script with TARGET_URL=${TARGET_URL} and MAX_WAIT_SECONDS=${MAX_WAIT_SECONDS}"
+          # make sure script is executable if needed
+          ls -l
+          python fetch_stream.py 2>&1 | tee fetch_stream_output.txt
 
+      - name: Upload run log as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fetch-stream-log
+          path: fetch_stream_output.txt
